@@ -1,1 +1,61 @@
 # smart-rec-engine
+
+React (Vite) frontend with a Flask backend connected to Supabase.
+
+## Project structure
+
+- `smart-engine/`: React + Vite frontend
+- `backend/`: Flask API and Supabase integration
+
+## Backend setup (Flask + Supabase)
+
+1. Create and activate a Python virtual environment.
+2. Install Python dependencies:
+
+```bash
+pip install -r backend/requirements.txt
+```
+
+3. Confirm `backend/.env` contains your Supabase settings:
+
+```env
+SUPABASE_URL=https://bzrhradrgbveqqzluoyh.supabase.co
+SUPABASE_KEY=your_key_here
+```
+
+4. Run Flask:
+
+```bash
+python backend/app.py
+```
+
+Available endpoints:
+
+- `GET /api/health`
+- `GET /api/supabase/health`
+
+## Frontend setup
+
+Install frontend deps (if needed):
+
+```bash
+cd smart-engine
+npm install
+```
+
+Run Vite dev server:
+
+```bash
+npm run dev
+```
+
+The frontend uses a Vite proxy so `/api/*` is forwarded to `http://127.0.0.1:5000`.
+
+## Optional root scripts
+
+From repository root:
+
+- `npm run dev` (starts frontend dev server)
+- `npm run frontend:dev`
+- `npm run frontend:build`
+- `npm run backend:dev`

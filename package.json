@@ -1,4 +1,10 @@
 {
+  "scripts": {
+    "dev": "npm run dev --prefix smart-engine",
+    "frontend:dev": "npm run dev --prefix smart-engine",
+    "frontend:build": "npm run build --prefix smart-engine",
+    "backend:dev": "python backend/app.py"
+  },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.1",
     "tailwindcss": "^4.2.1"

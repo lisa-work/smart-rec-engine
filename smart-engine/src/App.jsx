@@ -1,34 +1,79 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [apiStatus, setApiStatus] = useState('Not checked')
+  const [supabaseStatus, setSupabaseStatus] = useState('Not checked')
+
+  const readResponseBody = async (response) => {
+    const raw = await response.text()
+    if (!raw) {
+      return null
+    }
+
+    try {
+      return JSON.parse(raw)
+    } catch {
+      return { raw }
+    }
+  }
+
+  const checkFlask = async () => {
+    setApiStatus('Checking...')
+    try {
+      const response = await fetch('/api/health')
+      const data = await readResponseBody(response)
+
+      if (!response.ok) {
+        const details = data?.message || data?.raw || 'Non-JSON error response from server'
+        setApiStatus(`${response.status} - ${details}`)
+        return
+      }
+
+      setApiStatus(`${response.status} - ${data?.status || 'ok'}`)
+    } catch (error) {
+      setApiStatus(`Error - Cannot reach backend. Start Flask on port 5000. (${error.message})`)
+    }
+  }
+
+  const checkSupabase = async () => {
+    setSupabaseStatus('Checking...')
+    try {
+      const response = await fetch('/api/supabase/health')
+      const data = await readResponseBody(response)
+
+      if (!response.ok) {
+        const details = data?.message || data?.raw || 'Non-JSON error response from server'
+        setSupabaseStatus(`${response.status} - ${details}`)
+        return
+      }
+
+      const statusLabel = data.supabase_status_code
+        ? `${response.status} - Supabase ${data.supabase_status_code}`
+        : `${response.status} - ${data?.status || 'ok'}`
+      setSupabaseStatus(statusLabel)
+    } catch (error) {
+      setSupabaseStatus(`Error - Cannot reach backend. Start Flask on port 5000. (${error.message})`)
+    }
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <main className="container">
+      <h1>Smart Rec Engine</h1>
+      <p className="subtitle">Flask + Supabase setup check</p>
+
+      <section className="card">
+        <h2>Backend API</h2>
+        <p className="status">{apiStatus}</p>
+        <button onClick={checkFlask}>Check Flask</button>
+      </section>
+
+      <section className="card">
+        <h2>Supabase Connection</h2>
+        <p className="status">{supabaseStatus}</p>
+        <button onClick={checkSupabase}>Check Supabase</button>
+      </section>
+    </main>
   )
 }
 
