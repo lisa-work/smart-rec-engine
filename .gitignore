@@ -3,3 +3,13 @@ smart-engine/node_modules/
 backend/.env
 backend/__pycache__/
 *.pyc
+
+# Exclude Python environment from repo
+.venv
+venv/
+.venv/
+venv.bak/
+#...and just in case...
+Scripts/
+Lib/
+Include/
