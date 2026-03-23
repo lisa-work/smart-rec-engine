@@ -1,25 +1,24 @@
 import { useState } from "react";
+import supabase from "../utils/supabase";
 
 function Login() {
 
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");   // change username → email
   const [password, setPassword] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const response = await fetch("http://localhost:8080/perform_login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ username, password })
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     });
 
-    if (response.ok) {
-      alert("Login successful");
+    if (error) {
+      alert("Login failed: " + error.message);
     } else {
-      alert("Login failed");
+      alert("Login successful!");
+      console.log(data);
     }
   };
 
@@ -29,15 +28,15 @@ function Login() {
 
       <form onSubmit={handleSubmit}>
         <input
-          type="text"
-          placeholder="Username"
-          onChange={(e)=>setUsername(e.target.value)}
+          type="email"
+          placeholder="Email"
+          onChange={(e) => setEmail(e.target.value)}
         />
 
         <input
           type="password"
           placeholder="Password"
-          onChange={(e)=>setPassword(e.target.value)}
+          onChange={(e) => setPassword(e.target.value)}
         />
 
         <button type="submit">Login</button>

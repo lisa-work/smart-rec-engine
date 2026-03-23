@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import './App.css'
+import Login from "./components/Login";
 
 function App() {
   const [apiStatus, setApiStatus] = useState('Not checked')
@@ -73,6 +74,8 @@ function App() {
         <p className="status">{supabaseStatus}</p>
         <button onClick={checkSupabase}>Check Supabase</button>
       </section>
+
+      <Login />
     </main>
   )
 }
