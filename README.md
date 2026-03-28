@@ -22,7 +22,7 @@ pip install -r backend/requirements.txt
 FLASK_ENV=development
 FLASK_DEBUG=1
 PORT=5000
-SUPABASE_URL=https://bzrhradrgbveqqzluoyh.supabase.co
+SUPABASE_URL=your_supabase_key
 SUPABASE_KEY=your_key_here
 ```
 
