@@ -29,7 +29,7 @@ SUPABASE_KEY=your_key_here
 3-2. Confirm `smart-engine/.env` contains your Supabase settings:
 
 ```env
-VITE_SUPABASE_URL=https://bzrhradrgbveqqzluoyh.supabase.co
+VITE_SUPABASE_URL=your_supabase_key
 VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your__pub_default_key_here
 ```
 
