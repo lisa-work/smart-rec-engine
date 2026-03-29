@@ -38,7 +38,7 @@ def supabase_health_check():
             HTTPStatus.INTERNAL_SERVER_ERROR,
         )
 
-    rest_endpoint = f"{SUPABASE_URL.rstrip('/')}/rest/v1/"
+    rest_endpoint = f"{SUPABASE_URL.rstrip('/')}/rest/v1/test"
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
