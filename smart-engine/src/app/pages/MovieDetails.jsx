@@ -13,13 +13,18 @@ function MovieDetails() {
   const navigate = useNavigate();
   const { getMovieDetails, getRatingForMovie, addRating, updateRating, searchMovies } = useApp();
   const [movie, setMovie] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [similarMovies, setSimilarMovies] = useState([]);
   // Load main movie
   useEffect(() => {
     let active = true;
     const loadMovie = async () => {
+      setIsLoading(true);
       const data = await getMovieDetails(id);
-      if (active) setMovie(data);
+      if (active) {
+        setMovie(data);
+        setIsLoading(false);
+      }
     };
     loadMovie();
     return () => { active = false; };
@@ -38,6 +43,26 @@ function MovieDetails() {
     loadSimilar();
   }, [movie]);
   const userRating = movie ? getRatingForMovie(movie.id) : null;
+  if (isLoading) {
+    return /* @__PURE__ */ React.createElement(
+      "div",
+      {
+        className: "min-h-screen flex items-center justify-center",
+        style: { backgroundColor: "var(--bg-primary)" }
+      },
+      /* @__PURE__ */ React.createElement("div", { className: "text-center" }, /* @__PURE__ */ React.createElement(
+        "p",
+        {
+          className: "mb-4",
+          style: {
+            fontSize: "var(--text-section)",
+            color: "var(--text-primary)"
+          }
+        },
+        "Loading..."
+      ))
+    );
+  }
   if (!movie) {
     return /* @__PURE__ */ React.createElement(
       "div",

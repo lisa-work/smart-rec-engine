@@ -12,14 +12,24 @@ function MyRatings() {
   const navigate = useNavigate();
   const [editingId, setEditingId] = useState(null);
   const [ratedMovies, setRatedMovies] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
     useEffect(() => {
       const loadRatedMovies = async () => {
+        setIsLoading(true);
         const results = await Promise.all(
           userRatings.map(async (rating) => {
             const movie = await getMovieDetails(rating.movie_id);
             return { rating, movie };
-        })); setRatedMovies(results.filter(r => r.movie));
-      }; loadRatedMovies();
+        })); 
+        setRatedMovies(results.filter(r => r.movie));
+        setIsLoading(false);
+      }; 
+      if (userRatings.length > 0) {
+        loadRatedMovies();
+      } else {
+        setRatedMovies([]);
+        setIsLoading(false);
+      }
     }, [userRatings]);
   const handleDelete = (movie_id) => {
     if (confirm("Are you sure you want to delete this rating?")) {
@@ -30,6 +40,29 @@ function MyRatings() {
     updateRating(movie_id, newRating);
     setEditingId(null);
   };
+  if (isLoading) {
+    return /* @__PURE__ */ React.createElement("div", { className: "min-h-screen", style: { backgroundColor: "var(--bg-primary)" } }, /* @__PURE__ */ React.createElement("div", { className: "max-w-[1280px] mx-auto px-6 py-12" }, /* @__PURE__ */ React.createElement(
+      "h1",
+      {
+        className: "mb-8",
+        style: {
+          fontSize: "var(--text-hero)",
+          color: "var(--text-primary)"
+        }
+      },
+      "My Ratings"
+    ), /* @__PURE__ */ React.createElement("div", { className: "text-center py-16" }, /* @__PURE__ */ React.createElement(
+      "p",
+      {
+        className: "mb-4",
+        style: {
+          fontSize: "var(--text-card)",
+          color: "var(--text-secondary)"
+        }
+      },
+      "Loading..."
+    ))));
+  }
   if (ratedMovies.length === 0) {
     return /* @__PURE__ */ React.createElement("div", { className: "min-h-screen", style: { backgroundColor: "var(--bg-primary)" } }, /* @__PURE__ */ React.createElement("div", { className: "max-w-[1280px] mx-auto px-6 py-12" }, /* @__PURE__ */ React.createElement(
       "h1",

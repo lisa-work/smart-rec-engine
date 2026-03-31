@@ -11,63 +11,94 @@ function AppProvider({ children }) {
 
   const API_BASE = "http://localhost:5000/api";
 
-  const normalizeMovie = (m) => ({
-    id: m.imdbID || m.imdb_id,
-    title: m.Title || m.title,
-    year: m.Year || m.year,
-    genres: (m.Genre || m.genre || "").split(", ").filter(Boolean),
-    posterUrl: m.Poster || m.poster,
-    plot: m.Plot || m.plot || "No description available.",
-    rating: isNaN(parseFloat(m.imdbRating || m.imdb_rating))
-      ? 0
-      : parseFloat(m.imdbRating || m.imdb_rating)
-  });
+  const normalizeMovie = (m) => {
+    const normalized = {
+      id: m.imdbID || m.imdb_id,
+      title: m.Title || m.title,
+      year: m.Year || m.year,
+      genres: (m.Genre || m.genre || "").split(", ").filter(Boolean),
+      posterUrl: m.Poster || m.poster,
+      plot: m.Plot || m.plot || "No description available.",
+      rating: isNaN(parseFloat(m.imdbRating || m.imdb_rating))
+        ? 0 : parseFloat(m.imdbRating || m.imdb_rating)
+    };
+    if (!normalized.id) {
+      console.warn("Movie missing ID, raw data:", m);
+    }
+    return normalized;
+  };
   
   // Search movies (OMDb)
   const searchMovies = async (query) => {
     if (!query) return [];
 
-    setLoading(true);
-
     try {
-      // Step 1: Search
-      const res = await fetch(`${API_BASE}/movies/search?q=${encodeURIComponent(query)}&page=1`);
-      const data = await res.json();
+      const pages = [1, 2, 3];
+      // Step 1: fetch search pages safely
+      const results = await Promise.all(
+        pages.map(async (page) => {
+          try {
+            const res = await fetch(
+              `${API_BASE}/movies/search?q=${query}&page=${page}`);
+            if (!res.ok) {
+              console.warn(`Search page ${page} failed with status ${res.status}`);
+              return [];
+            }
+            const data = await res.json();
+            console.log(`PAGE ${page} RESPONSE:`, data);
 
-      if (!data || data.Response === "False") {
-        console.warn("Search failed:", data?.Error);
+            if (data.success === false) return [];
+
+            return data.data.Search || [];
+          } catch (err) {
+            console.warn(`Error fetching page ${page}:`, err);
+            return [];
+          }}));
+      const combined = results.flat();
+      if (combined.length === 0) {
+        console.warn("No search results from API");
         return [];
       }
 
-      const searchResults = data.Search || [];
+      // Step 2: fetch full details safely
+      const detailed = await Promise.all(
+        combined.map(async (m) => {
+          try {
+            const res = await fetch(`${API_BASE}/movies/${m.imdbID}`);
+            if (!res.ok) {
+              console.warn(`Detail fetch failed for ${m.imdbID}, using search data`);
+              return normalizeMovie(m);  // Fallback to search result
+            }
+            const full = await res.json();
+            console.log(`DETAIL API RESPONSE for ${m.imdbID}:`, JSON.stringify(full, null, 2));
+            
+            // Try to extract the movie data - it could be wrapped in various ways
+            let rawMovie = full;
+            if (full?.data && typeof full.data === 'object') {
+              // If wrapped in {data: {...}}, unwrap it
+              rawMovie = full.data;
+            }
+            
+            console.log(`Using rawMovie:`, rawMovie);
+            const normalized = normalizeMovie(rawMovie);
+            console.log(`NORMALIZED from detail:`, normalized);
+            return normalized;
+          } catch (err) {
+            console.warn("Detail fetch error:", err);
+            return normalizeMovie(m);  // Fallback to search result
+          }}));
 
-      // Step 2: Get details ONE BY ONE (safe)
-      const movies = [];
-
-      for (let i = 0; i < searchResults.length; i++) {
-        const m = searchResults[i];
-
-        try {
-          const detailRes = await fetch(`${API_BASE}/movies/${m.imdbID}`);
-          const detailData = await detailRes.json();
-
-          if (detailData && (detailData.imdbID || detailData.imdb_id)) {
-            movies.push(normalizeMovie(detailData));
-          }
-        } catch (err) {
-          console.warn("Skipping bad movie:", m.imdbID);
-        }
-      }
-
-      return movies;
+      // Step 3: filter valid movies ONLY
+      const cleaned = detailed.filter((m) => m && m.id);
+      console.log("FINAL CLEANED RESULTS:", cleaned);
+      return cleaned;
 
     } catch (err) {
-      console.error("Search crashed:", err);
+      console.error("Search failed:", err);
       return [];
-    } finally {
-      setLoading(false);
     }
   };
+
   // Get full movie details (and store in Supabase via backend)
   const getMovieDetails = async (imdb_id) => {
     setLoading(true);
@@ -196,7 +227,8 @@ function AppProvider({ children }) {
     searchQuery,
     setSearchQuery,
     searchMovies,
-    getMovieDetails
+    getMovieDetails,
+    loading
   };
   return /* @__PURE__ */ React.createElement(AppContext.Provider, { value }, children);
 }

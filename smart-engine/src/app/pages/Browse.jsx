@@ -9,7 +9,8 @@ import { Search } from "lucide-react";
 function Browse() {
   const [movies, setMovies] = useState([]);
   const [selectedGenre, setSelectedGenre] = useState("All");
-  const { searchQuery, setSearchQuery, searchMovies, loading } = useApp();
+  const [isLoading, setIsLoading] = useState(false);
+  const { searchQuery, setSearchQuery, searchMovies } = useApp();
   // The Search Bar
   useEffect(() => {
     let active = true;
@@ -19,34 +20,26 @@ function Browse() {
       setMovies([]);
       return;
     }
-
     const fetchMovies = async () => {
+      setIsLoading(true);
       const results = await searchMovies(query);
-
-      if (!active) return; // 🧠 prevents race condition
-
-      if (!results) return;
-
-      const unique = results.filter(
-        (m, i, arr) => arr.findIndex(x => x.id === m.id) === i
-      );
-
+      if (!active) return; // prevents race condition
+      setIsLoading(false);
+      if (!results) {
+        setMovies([]);
+        return;
+      }
+      const unique = results.filter((m, i, arr) => arr.findIndex(x => x.id === m.id) === i);
       let filtered = unique;
 
       if (selectedGenre !== "All") {
         filtered = unique.filter((movie) =>
           (movie.genres || []).includes(selectedGenre)
         );
-      }
-
-      setMovies(filtered);
+      } setMovies(filtered);
     };
-
     fetchMovies();
-
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [searchQuery, selectedGenre]);
 
   const allGenres = ["All", ...Array.from(new Set(
@@ -133,7 +126,7 @@ function Browse() {
               fontSize: "var(--text-base)",
               color: "var(--text-secondary)"
             }},
-          loading
+          isLoading
             ? "Loading..."
             : movies.length +
                 " movie" +
@@ -162,7 +155,7 @@ function Browse() {
                   }},
                 /* @__PURE__ */ React.createElement(MovieCard, { movie })
               )))
-        : !loading &&
+        : !isLoading && searchQuery &&
           /* @__PURE__ */ React.createElement(
             motion.div, {
               initial: { opacity: 0 },
