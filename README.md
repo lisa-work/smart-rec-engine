@@ -16,11 +16,25 @@ React (Vite) frontend with a Flask backend connected to Supabase.
 pip install -r backend/requirements.txt
 ```
 
-3. Confirm `backend/.env` contains your Supabase settings:
+3-1. Confirm `backend/.env` contains your Supabase settings:
 
 ```env
-SUPABASE_URL=https://bzrhradrgbveqqzluoyh.supabase.co
+FLASK_ENV=development
+FLASK_DEBUG=1
+PORT=5000
+SUPABASE_URL=your_supabase_key
 SUPABASE_KEY=your_key_here
+
+OMDB_API_URL=your_omdb_url_here
+# Wont be used in the code itself, but it's there for reference
+OMDB_API_KEY=your_omdb_key_here
+```
+
+3-2. Confirm `smart-engine/.env` contains your Supabase settings:
+
+```env
+VITE_SUPABASE_URL=your_supabase_key
+VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY=your__pub_default_key_here
 ```
 
 4. Run Flask:
@@ -41,6 +55,8 @@ Install frontend deps (if needed):
 ```bash
 cd smart-engine
 npm install
+
+npm install @vitejs/plugin-react
 ```
 
 Run Vite dev server:
