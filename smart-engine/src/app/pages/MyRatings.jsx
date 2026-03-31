@@ -1,26 +1,33 @@
 import React from "react";
 import { useApp } from "../context/AppContext";
-import { moviesDatabase } from "../data/movies";
+/*import { moviesDatabase } from "../data/movies";*/
 import { StarRating } from "../components/StarRating";
 import { motion } from "motion/react";
 import { Trash2, Edit2 } from "lucide-react";
 import { useNavigate } from "react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
 function MyRatings() {
-  const { userRatings, deleteRating, updateRating } = useApp();
+  const { userRatings, deleteRating, updateRating, getMovieDetails } = useApp();
   const navigate = useNavigate();
   const [editingId, setEditingId] = useState(null);
-  const ratedMovies = userRatings.map((rating) => ({
-    rating,
-    movie: moviesDatabase.find((m) => m.id === rating.movieId)
-  })).filter((item) => item.movie).sort((a, b) => b.rating.timestamp - a.rating.timestamp);
-  const handleDelete = (movieId) => {
+  const [ratedMovies, setRatedMovies] = useState([]);
+    useEffect(() => {
+      const loadRatedMovies = async () => {
+        const results = await Promise.all(
+          userRatings.map(async (rating) => {
+            const movie = await getMovieDetails(rating.movie_id);
+            return { rating, movie };
+        })); setRatedMovies(results.filter(r => r.movie));
+      }; loadRatedMovies();
+    }, [userRatings]);
+  const handleDelete = (movie_id) => {
     if (confirm("Are you sure you want to delete this rating?")) {
-      deleteRating(movieId);
+      deleteRating(movie_id);
     }
   };
-  const handleUpdateRating = (movieId, newRating) => {
-    updateRating(movieId, newRating);
+  const handleUpdateRating = (movie_id, newRating) => {
+    updateRating(movie_id, newRating);
     setEditingId(null);
   };
   if (ratedMovies.length === 0) {

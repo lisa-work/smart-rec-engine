@@ -40,7 +40,7 @@ function MovieCard({ movie, isRecommended = false }) {
       /* @__PURE__ */ React.createElement("div", { className: "relative overflow-hidden", style: { height: "360px" } }, /* @__PURE__ */ React.createElement(
         motion.img,
         {
-          src: movie.posterUrl,
+          src: movie.posterUrl !== "N/A" ? movie.posterUrl : "/no-image.png",
           alt: movie.title,
           className: "w-full h-full object-cover",
           whileHover: { scale: 1.1 },
@@ -71,7 +71,7 @@ function MovieCard({ movie, isRecommended = false }) {
       ), /* @__PURE__ */ React.createElement("p", { style: {
         fontSize: "var(--text-small)",
         color: "var(--text-muted)"
-      } }, movie.year)), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap gap-1.5" }, movie.genres.slice(0, 3).map((genre) => /* @__PURE__ */ React.createElement(
+      } }, movie.year)), /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap gap-1.5" }, (movie.genres || []).slice(0, 3).map((genre) => /* @__PURE__ */ React.createElement(
         "span",
         {
           key: genre,
@@ -83,10 +83,10 @@ function MovieCard({ movie, isRecommended = false }) {
           }
         },
         genre
-      ))), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(StarRating, { rating: movie.averageRating, readonly: true, size: "sm" }), /* @__PURE__ */ React.createElement("span", { style: {
+      ))), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement(StarRating, { rating: (movie.rating * 0.5|| 0), readonly: true, size: "sm" }), /* @__PURE__ */ React.createElement("span", { style: {
         fontSize: "var(--text-small)",
         color: "var(--text-secondary)"
-      } }, movie.averageRating.toFixed(1))), /* @__PURE__ */ React.createElement("div", { className: "pt-2 border-t", style: { borderColor: "var(--border)" } }, /* @__PURE__ */ React.createElement(
+      } }, (movie.rating * 0.5|| 0).toFixed(1))), /* @__PURE__ */ React.createElement("div", { className: "pt-2 border-t", style: { borderColor: "var(--border)" } }, /* @__PURE__ */ React.createElement(
         "p",
         {
           className: "mb-2",

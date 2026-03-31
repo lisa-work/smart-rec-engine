@@ -1,14 +1,25 @@
 import React from "react";
 import { useApp } from "../context/AppContext";
 import { MovieCard } from "../components/MovieCard";
-import { moviesDatabase } from "../data/movies";
+/*import { moviesDatabase } from "../data/movies";*/
 import { motion } from "motion/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 function Dashboard() {
-  const { getRecommendedMovies, userRatings } = useApp();
-  const recommendedMovies = getRecommendedMovies();
-  const recentlyRated = userRatings.sort((a, b) => b.timestamp - a.timestamp).slice(0, 10).map((rating) => moviesDatabase.find((m) => m.id === rating.movieId)).filter(Boolean);
+  const { recommendedMovies, fetchRecommendations, userRatings, getMovieDetails } = useApp();
+  const [recentlyRated, setRecentlyRated] = useState([]);
+  useEffect(() => {
+    fetchRecommendations();
+
+    const fetchRecent = async () => {
+      const recent = [...userRatings].sort((a, b) => b.timestamp - a.timestamp).slice(0, 10);
+      const movies = await Promise.all(recent.map((r) => getMovieDetails(r.movie_id)));
+      setRecentlyRated(movies.filter(Boolean));
+    };
+    if (userRatings.length > 0) {
+      fetchRecent();
+    }
+  }, [userRatings]);
   const [recentScrollPos, setRecentScrollPos] = useState(0);
   const scrollRecent = (direction) => {
     const container = document.getElementById("recent-carousel");

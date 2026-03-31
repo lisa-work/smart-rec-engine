@@ -1,10 +1,23 @@
 import React from "react";
 import { useApp } from "../context/AppContext";
-import { moviesDatabase } from "../data/movies";
+/*import { moviesDatabase } from "../data/movies";*/
 import { motion } from "motion/react";
 import { Star, Film, Award } from "lucide-react";
+import { useState, useEffect } from "react";
+
 function Profile() {
-  const { user, userRatings } = useApp();
+  const { user, userRatings, getMovieDetails } = useApp();
+  const [moviesMap, setMoviesMap] = useState({});
+  useEffect(() => {
+    const loadMovies = async () => {
+      const entries = await Promise.all(
+        userRatings.map(async (r) => {
+          const movie = await getMovieDetails(r.movie_id);
+          return [r.movie_id, movie];
+        })); setMoviesMap(Object.fromEntries(entries));
+      }; loadMovies();
+  }, [userRatings]);
+
   if (!user) {
     return null;
   }
@@ -13,7 +26,7 @@ function Profile() {
   const genreCounts = /* @__PURE__ */ new Map();
   userRatings.forEach((rating) => {
     if (rating.rating >= 4) {
-      const movie = moviesDatabase.find((m) => m.id === rating.movieId);
+      const movie = moviesMap[rating.movie_id];
       if (movie) {
         movie.genres.forEach((genre) => {
           genreCounts.set(genre, (genreCounts.get(genre) || 0) + 1);

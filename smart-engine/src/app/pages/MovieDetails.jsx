@@ -1,16 +1,42 @@
 import React from "react";
 import { useParams, useNavigate } from "react-router";
-import { moviesDatabase } from "../data/movies";
+/*import { moviesDatabase } from "../data/movies";*/
 import { StarRating } from "../components/StarRating";
 import { MovieCard } from "../components/MovieCard";
 import { useApp } from "../context/AppContext";
 import { motion } from "motion/react";
 import { ArrowLeft } from "lucide-react";
+import { useState, useEffect } from "react";
+
 function MovieDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getRatingForMovie, addRating, updateRating } = useApp();
-  const movie = moviesDatabase.find((m) => m.id === Number(id));
+  const { getMovieDetails, getRatingForMovie, addRating, updateRating, searchMovies } = useApp();
+  const [movie, setMovie] = useState(null);
+  const [similarMovies, setSimilarMovies] = useState([]);
+  // Load main movie
+  useEffect(() => {
+    let active = true;
+    const loadMovie = async () => {
+      const data = await getMovieDetails(id);
+      if (active) setMovie(data);
+    };
+    loadMovie();
+    return () => { active = false; };
+  }, [id]);
+  // Load similar movies
+  useEffect(() => {
+    const loadSimilar = async () => {
+      if (!movie) return;
+
+      const genreQuery = movie.genres?.[0];
+      if (!genreQuery) return;
+      const results = await searchMovies(genreQuery);
+      const filtered = results.filter((m) => m.id !== movie.id).slice(0, 4);
+      setSimilarMovies(filtered);
+    };
+    loadSimilar();
+  }, [movie]);
   const userRating = movie ? getRatingForMovie(movie.id) : null;
   if (!movie) {
     return /* @__PURE__ */ React.createElement(
@@ -50,9 +76,6 @@ function MovieDetails() {
       addRating(movie.id, rating);
     }
   };
-  const similarMovies = moviesDatabase.filter(
-    (m) => m.id !== movie.id && m.genres.some((genre) => movie.genres.includes(genre))
-  ).slice(0, 4);
   return /* @__PURE__ */ React.createElement("div", { className: "min-h-screen", style: { backgroundColor: "var(--bg-primary)" } }, /* @__PURE__ */ React.createElement(
     "div",
     {
@@ -147,7 +170,7 @@ function MovieDetails() {
         }
       },
       "Average Rating"
-    ), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ React.createElement(StarRating, { rating: movie.averageRating, readonly: true, size: "lg" }), /* @__PURE__ */ React.createElement(
+    ), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3" }, /* @__PURE__ */ React.createElement(StarRating, { rating: (movie.rating * 0.5), readonly: true, size: "lg" }), /* @__PURE__ */ React.createElement(
       "span",
       {
         style: {
@@ -155,7 +178,7 @@ function MovieDetails() {
           color: "var(--text-primary)"
         }
       },
-      movie.averageRating.toFixed(1),
+      (movie.rating.toFixed(1)) * 0.5,
       " / 5.0"
     ))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(
       "h3",
@@ -176,7 +199,7 @@ function MovieDetails() {
           lineHeight: "1.7"
         }
       },
-      movie.description
+      movie.plot
     )), /* @__PURE__ */ React.createElement(
       "div",
       {
