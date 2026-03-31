@@ -88,8 +88,8 @@ function AppProvider({ children }) {
             return normalizeMovie(m);  // Fallback to search result
           }}));
 
-      // Step 3: filter valid movies ONLY
-      const cleaned = detailed.filter((m) => m && m.id);
+      // Step 3: filter valid movies ONLY (exclude 0 ratings)
+      const cleaned = detailed.filter((m) => m && m.id && m.rating > 0);
       console.log("FINAL CLEANED RESULTS:", cleaned);
       return cleaned;
 
@@ -104,8 +104,9 @@ function AppProvider({ children }) {
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/movies/${imdb_id}`);
-      const data = await res.json();
-      return normalizeMovie(data);
+      const response = await res.json();
+      const movieData = response.data || response;
+      return normalizeMovie(movieData);
     } catch (err) {
       console.error("Fetch movie failed:", err);
       return null;
@@ -139,8 +140,9 @@ function AppProvider({ children }) {
   const fetchRatings = async () => {
     try {
       const res = await fetch(`${API_BASE}/ratings?user_id=demo-user`);
-      const data = await res.json();
-      setUserRatings(data);
+      const response = await res.json();
+      const ratingsData = response.data || response;
+      setUserRatings(Array.isArray(ratingsData) ? ratingsData : []);
     } catch (err) {
       console.error("Failed to fetch ratings:", err);
     }
@@ -206,8 +208,9 @@ function AppProvider({ children }) {
   const fetchRecommendations = async () => {
     try {
       const res = await fetch(`${API_BASE}/recommendations?user_id=demo-user`);
-      const data = await res.json();
-      setRecommendedMovies(data.map(normalizeMovie));
+      const response = await res.json();
+      const moviesData = response.data || response;
+      setRecommendedMovies(Array.isArray(moviesData) ? moviesData.map(normalizeMovie) : []);
     } catch (err) {
       console.error(err);
     }
