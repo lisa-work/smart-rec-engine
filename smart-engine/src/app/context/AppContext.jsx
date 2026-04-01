@@ -9,8 +9,6 @@ function AppProvider({ children }) {
   const [recommendedMovies, setRecommendedMovies] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const API_BASE = "http://localhost:5000/api";
-
   const normalizeMovie = (m) => {
     const normalized = {
       id: m.imdbID || m.imdb_id,
@@ -39,7 +37,7 @@ function AppProvider({ children }) {
         pages.map(async (page) => {
           try {
             const res = await fetch(
-              `${API_BASE}/movies/search?q=${query}&page=${page}`);
+              `/api/movies/search?q=${query}&page=${page}`);
             if (!res.ok) {
               console.warn(`Search page ${page} failed with status ${res.status}`);
               return [];
@@ -64,7 +62,7 @@ function AppProvider({ children }) {
       const detailed = await Promise.all(
         combined.map(async (m) => {
           try {
-            const res = await fetch(`${API_BASE}/movies/${m.imdbID}`);
+            const res = await fetch(`/api/movies/${m.imdbID}`);
             if (!res.ok) {
               console.warn(`Detail fetch failed for ${m.imdbID}, using search data`);
               return normalizeMovie(m);  // Fallback to search result
@@ -103,7 +101,7 @@ function AppProvider({ children }) {
   const getMovieDetails = async (imdb_id) => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/movies/${imdb_id}`);
+      const res = await fetch(`/api/movies/${imdb_id}`);
       const response = await res.json();
       const movieData = response.data || response;
       return normalizeMovie(movieData);
@@ -139,7 +137,7 @@ function AppProvider({ children }) {
   };
   const fetchRatings = async () => {
     try {
-      const res = await fetch(`${API_BASE}/ratings?user_id=demo-user`);
+      const res = await fetch(`/api/ratings?user_id=demo-user`);
       const response = await res.json();
       const ratingsData = response.data || response;
       setUserRatings(Array.isArray(ratingsData) ? ratingsData : []);
@@ -149,7 +147,7 @@ function AppProvider({ children }) {
   };
   const addRating = async (movie_id, rating) => {
     try {
-      await fetch(`${API_BASE}/ratings`, {
+      await fetch(`/api/ratings`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -172,7 +170,7 @@ function AppProvider({ children }) {
       return;
     }
     try {
-      await fetch(`${API_BASE}/ratings/${existing.id}`, {
+      await fetch(`/api/ratings/${existing.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json"
@@ -191,7 +189,7 @@ function AppProvider({ children }) {
       return;
     }
     try {
-      await fetch(`${API_BASE}/ratings/${existing.id}`, {
+      await fetch(`/api/ratings/${existing.id}`, {
         method: "DELETE"
       });
 
@@ -207,7 +205,7 @@ function AppProvider({ children }) {
   };
   const fetchRecommendations = async () => {
     try {
-      const res = await fetch(`${API_BASE}/recommendations?user_id=demo-user`);
+      const res = await fetch(`/api/recommendations?user_id=demo-user`);
       const response = await res.json();
       const moviesData = response.data || response;
       setRecommendedMovies(Array.isArray(moviesData) ? moviesData.map(normalizeMovie) : []);
