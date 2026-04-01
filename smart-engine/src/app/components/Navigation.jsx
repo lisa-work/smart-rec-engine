@@ -8,8 +8,8 @@ function Navigation() {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate("/");
     setMobileMenuOpen(false);
   };
@@ -100,12 +100,17 @@ function Navigation() {
         style: { color: "var(--text-primary)" }
       },
       /* @__PURE__ */ React.createElement(
-        "img",
+        "div",
         {
-          src: user.avatar,
-          alt: user.username,
-          className: "w-8 h-8 rounded-full"
-        }
+          className: "w-8 h-8 rounded-full flex items-center justify-center",
+          style: {
+            backgroundColor: "var(--accent-primary)",
+            color: "white",
+            fontSize: "12px",
+            fontWeight: "bold"
+          }
+        },
+        user?.email?.[0]?.toUpperCase() || "U"
       ),
       /* @__PURE__ */ React.createElement("span", { style: { fontSize: "var(--text-base)" } }, user.username)
     ), /* @__PURE__ */ React.createElement(

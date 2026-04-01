@@ -4,18 +4,41 @@ import { useNavigate } from "react-router";
 import { useApp } from "../context/AppContext";
 import { Film } from "lucide-react";
 import { motion } from "motion/react";
+
 function Login() {
-  const [username, setUsername] = useState("");
-  const [password, setpassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useApp();
-  const handleSubmit = (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (username.trim() && password.trim()) {
-      login(username, password);
-      navigate("/dashboard");
+    setError("");
+    setLoading(true);
+
+    if (!email.trim() || !password.trim()) {
+      setError("Please enter both email and password");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const result = await login(email, password);
+      if (result.success) {
+        navigate("/dashboard");
+      } else {
+        setError(result.error || "Login failed");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred");
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
+
   return /* @__PURE__ */ React.createElement(
     "div",
     {
@@ -60,27 +83,40 @@ function Login() {
           fontSize: "var(--text-base)",
           color: "var(--text-secondary)"
         } }, "Login to discover your next favorite movie")),
+        error ? /* @__PURE__ */ React.createElement(
+          "div",
+          {
+            className: "mb-4 p-3 rounded-lg",
+            style: {
+              backgroundColor: "rgba(239, 68, 68, 0.1)",
+              borderLeft: "4px solid rgb(239, 68, 68)",
+              color: "rgb(239, 68, 68)",
+            }
+          },
+          error
+        ) : null,
         /* @__PURE__ */ React.createElement("form", { onSubmit: handleSubmit, className: "space-y-6" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(
           "label",
           {
-            htmlFor: "username",
+            htmlFor: "email",
             className: "block mb-2",
             style: {
               fontSize: "var(--text-base)",
               color: "var(--text-primary)"
             }
           },
-          "Username"
+          "Email"
         ), /* @__PURE__ */ React.createElement(
           "input",
           {
-            id: "username",
-            type: "text",
-            value: username,
-            onChange: (e) => setUsername(e.target.value),
+            id: "email",
+            type: "email",
+            value: email,
+            onChange: (e) => setEmail(e.target.value),
             required: true,
-            placeholder: "Enter your username",
-            className: "w-full px-4 py-3 rounded-lg outline-none focus:ring-2 transition-all",
+            disabled: loading,
+            placeholder: "Enter your email",
+            className: "w-full px-4 py-3 rounded-lg outline-none focus:ring-2 transition-all disabled:opacity-50",
             style: {
               backgroundColor: "var(--bg-secondary)",
               color: "var(--text-primary)",
@@ -105,10 +141,11 @@ function Login() {
             id: "password",
             type: "password",
             value: password,
-            onChange: (e) => setpassword(e.target.value),
+            onChange: (e) => setPassword(e.target.value),
             required: true,
+            disabled: loading,
             placeholder: "Enter your password",
-            className: "w-full px-4 py-3 rounded-lg outline-none focus:ring-2 transition-all",
+            className: "w-full px-4 py-3 rounded-lg outline-none focus:ring-2 transition-all disabled:opacity-50",
             style: {
               backgroundColor: "var(--bg-secondary)",
               color: "var(--text-primary)",
@@ -119,17 +156,18 @@ function Login() {
         )), /* @__PURE__ */ React.createElement(
           motion.button,
           {
-            whileHover: { scale: 1.02 },
-            whileTap: { scale: 0.98 },
+            whileHover: { scale: loading ? 1 : 1.02 },
+            whileTap: { scale: loading ? 1 : 0.98 },
             type: "submit",
-            className: "w-full py-3 rounded-lg shadow-lg transition-all",
+            disabled: loading,
+            className: "w-full py-3 rounded-lg shadow-lg transition-all font-medium disabled:opacity-50",
             style: {
               backgroundColor: "var(--accent-primary)",
               color: "white",
               fontSize: "var(--text-base)"
             }
           },
-          "Login"
+          loading ? "Logging in..." : "Login"
         )),
         /* @__PURE__ */ React.createElement(
           "p",
@@ -140,12 +178,13 @@ function Login() {
               color: "var(--text-muted)"
             }
           },
-          "Note: This is a demo. Your data is stored locally in your browser."
+          "Powered by Supabase Authentication"
         )
       )
     )
   );
 }
+
 export {
   Login
 };

@@ -1,5 +1,6 @@
 import React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
+import supabase from "../../utils/supabase";
 /*import { moviesDatabase } from "../data/movies";*/
 const AppContext = createContext(void 0);
 function AppProvider({ children }) {
@@ -8,6 +9,16 @@ function AppProvider({ children }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [recommendedMovies, setRecommendedMovies] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  const getAuthHeaders = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+
+    return {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    };
+  };
 
   const normalizeMovie = (m) => {
     const normalized = {
@@ -114,30 +125,70 @@ function AppProvider({ children }) {
   };
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("movieMindUser");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    fetchRatings();
-  }, []);
-  const login = (username, password) => {
-    const newUser = {
-      username,
-      password,
-      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=FF4C4C&color=fff`
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+      }
     };
-    setUser(newUser);
-    localStorage.setItem("movieMindUser", JSON.stringify(newUser));
+    checkUser();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+      } else {
+        setUser(null);
+      }
+    });
+    
+    return () => subscription?.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchRatings();
+      fetchRecommendations();
+    }
+  }, [user]);
+
+  const login = async (email, password) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      setUser(data.user);
+      return { success: true, user: data.user };
+    } catch (error) {
+      console.error("Login failed:", error.message);
+      return { success: false, error: error.message };
+    }
   };
-  const logout = () => {
-    setUser(null);
-    setUserRatings([]);
-    localStorage.removeItem("movieMindUser");
-    localStorage.removeItem("movieMindRatings");
+
+  const logout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      setUser(null);
+      setUserRatings([]);
+      setRecommendedMovies([]);
+      localStorage.removeItem("movieMindRatings");
+    } catch (error) {
+      console.error("Logout failed:", error.message);
+    }
   };
   const fetchRatings = async () => {
     try {
-      const res = await fetch(`/api/ratings?user_id=demo-user`);
+      const headers = await getAuthHeaders();
+      const res = await fetch(`/api/ratings`, {
+        headers
+      });
       const response = await res.json();
       const ratingsData = response.data || response;
       setUserRatings(Array.isArray(ratingsData) ? ratingsData : []);
@@ -147,15 +198,14 @@ function AppProvider({ children }) {
   };
   const addRating = async (movie_id, rating) => {
     try {
+      const headers = await getAuthHeaders();
+
       await fetch(`/api/ratings`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers,
         body: JSON.stringify({
           movie_id,
-          rating,
-          user_id: "demo-user"
+          rating
         })
       });
       await fetchRatings();
@@ -170,11 +220,10 @@ function AppProvider({ children }) {
       return;
     }
     try {
+      const headers = await getAuthHeaders();
       await fetch(`/api/ratings/${existing.id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers,
         body: JSON.stringify({ rating })
       });
       await fetchRatings();
@@ -189,8 +238,10 @@ function AppProvider({ children }) {
       return;
     }
     try {
+      const headers = await getAuthHeaders();
       await fetch(`/api/ratings/${existing.id}`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers
       });
 
       await fetchRatings();
@@ -205,7 +256,10 @@ function AppProvider({ children }) {
   };
   const fetchRecommendations = async () => {
     try {
-      const res = await fetch(`/api/recommendations?user_id=demo-user`);
+      const headers = await getAuthHeaders();
+      const res = await fetch(`/api/recommendations`, {
+        headers
+      });
       const response = await res.json();
       const moviesData = response.data || response;
       setRecommendedMovies(Array.isArray(moviesData) ? moviesData.map(normalizeMovie) : []);

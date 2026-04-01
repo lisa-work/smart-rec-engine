@@ -70,13 +70,18 @@ function Profile() {
         style: { backgroundColor: "var(--bg-card)" }
       },
       /* @__PURE__ */ React.createElement("div", { className: "flex flex-col md:flex-row items-center md:items-start gap-6" }, /* @__PURE__ */ React.createElement(
-        "img",
+        "div",
         {
-          src: user.avatar,
-          alt: user.username,
-          className: "w-32 h-32 rounded-full border-4",
-          style: { borderColor: "var(--accent-primary)" }
-        }
+          className: "w-32 h-32 rounded-full border-4 flex items-center justify-center",
+          style: {
+            borderColor: "var(--accent-primary)",
+            backgroundColor: "var(--accent-primary)",
+            color: "white",
+            fontSize: "48px",
+            fontWeight: "bold"
+          }
+        },
+        user?.email?.[0]?.toUpperCase() || "U"
       ), /* @__PURE__ */ React.createElement("div", { className: "flex-1 text-center md:text-left" }, /* @__PURE__ */ React.createElement(
         "h1",
         {
@@ -86,7 +91,7 @@ function Profile() {
             color: "var(--text-primary)"
           }
         },
-        user.username
+        user.email
       ), /* @__PURE__ */ React.createElement(
         "p",
         {

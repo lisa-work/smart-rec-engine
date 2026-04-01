@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from supabase import create_client
+from jose import jwt
 
 # =========================
 # Setup
@@ -113,6 +114,30 @@ def supabase_health_check():
             "SUPABASE_ERROR",
             details=str(e)
         )
+
+# =========================
+# JWT Stuff
+# =========================
+
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
+
+def get_user_id_from_request():
+    auth_header = request.headers.get("Authorization", None)
+
+    if not auth_header:
+        return None
+
+    try:
+        token = auth_header.split(" ")[1]
+        user = supabase.auth.get_user(token)
+        if user and user.user:
+            return user.user.id
+
+        return None
+
+    except Exception as e:
+        print("Auth error:", e)
+        return None
 
 # =========================
 # MOVIES (OMDb + Supabase)
@@ -292,7 +317,9 @@ def create_rating():
 
         movie_id = data.get("movie_id")
         rating = data.get("rating")
-        user_id = data.get("user_id", "demo-user")
+        user_id = get_user_id_from_request()
+        if not user_id:
+            return error_response("Unauthorized", 401, "UNAUTHORIZED")
 
         if not movie_id:
             return error_response(
@@ -343,7 +370,10 @@ def get_ratings():
                 "DATABASE_NOT_CONFIGURED"
             )
 
-        user_id = request.args.get("user_id", "demo-user")
+        user_id = get_user_id_from_request()
+        if not user_id:
+            return error_response("Unauthorized", 401, "UNAUTHORIZED")
+        
         res = supabase.table("ratings").select("*").eq("user_id", user_id).execute()
         return success_response(res.data)
     except Exception as e:
@@ -364,6 +394,10 @@ def update_rating(rating_id):
                 500,
                 "DATABASE_NOT_CONFIGURED"
             )
+        
+        user_id = get_user_id_from_request()
+        if not user_id:
+            return error_response("Unauthorized", 401, "UNAUTHORIZED")
         
         data = request.json
         if not data:
@@ -389,8 +423,12 @@ def update_rating(rating_id):
                 400,
                 "INVALID_RATING"
             )
-
-        res = supabase.table("ratings").update({"rating": rating}).eq("id", rating_id).execute()
+        
+        res = supabase.table("ratings") \
+            .update({"rating": rating}) \
+            .eq("id", rating_id) \
+            .eq("user_id", user_id) \
+            .execute()
         if not res.data:
             return error_response(
                 f"Rating with id {rating_id} not found",
@@ -417,7 +455,16 @@ def delete_rating(rating_id):
                 "DATABASE_NOT_CONFIGURED"
             )
             
-        res = supabase.table("ratings").delete().eq("id", rating_id).execute()
+        user_id = get_user_id_from_request()
+        if not user_id:
+            return error_response("Unauthorized", 401, "UNAUTHORIZED")
+        
+        res = supabase.table("ratings") \
+            .delete() \
+            .eq("id", rating_id) \
+            .eq("user_id", user_id) \
+            .execute()
+        
         return success_response({"deleted": True})
     except Exception as e:
         return error_response(
@@ -442,7 +489,9 @@ def recommendations():
                 "DATABASE_NOT_CONFIGURED"
             )
 
-        user_id = request.args.get("user_id", "demo-user")
+        user_id = get_user_id_from_request()
+        if not user_id:
+            return error_response("Unauthorized", 401, "UNAUTHORIZED")
         
         try:
             ratings_res = supabase.table("ratings").select("*").eq("user_id", user_id).execute()
